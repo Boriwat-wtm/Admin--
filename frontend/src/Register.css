@@ -1,0 +1,125 @@
+.register-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 90vh;
+  background-color: #f9f9f9;
+  font-family: Arial, sans-serif;
+}
+
+.register-container h1 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+}
+
+.register-form {
+  background: #fff;
+  padding: 3rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 400px;
+}
+
+.register-form label {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.register-form input {
+  width: 100%; /* ปรับให้ input กว้างเต็มฟอร์ม */
+  padding: 0.75rem; /* เพิ่ม padding เพื่อให้ input ดูใหญ่ขึ้น */
+  font-size: 1rem; /* เพิ่มขนาดตัวอักษร */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 1rem; /* เพิ่มระยะห่างระหว่าง input */
+  box-sizing: border-box; /* ป้องกันการล้นของ padding */
+}
+
+.phone-input {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.phone-input span {
+  background: #ddd;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+}
+
+.phone-input input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 0 4px 4px 0;
+}
+
+.error-message {
+  color: red;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+button {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  width: 100%;
+}
+
+button:hover {
+  background: #0056b3;
+}
+
+.otp-inputs {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+.otp-input {
+  width: 40px;
+  height: 40px;
+  text-align: center;
+  font-size: 18px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.countdown-timer {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #555;
+}
+
+.password-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.password-container input {
+  flex: 1;
+  padding-right: 2.5rem; /* เพิ่มพื้นที่สำหรับไอคอน */
+}
+
+.toggle-password-icon {
+  position: absolute;
+  right: 10px;
+  cursor: pointer;
+  color: #888;
+  font-size: 1.2rem;
+}
+
+.toggle-password-icon:hover {
+  color: #000;
+}
