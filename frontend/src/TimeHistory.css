@@ -1,0 +1,108 @@
+.th-minimal-container {
+  min-height: 100vh;
+  background: #f6f8fb;
+  font-family: 'Prompt', 'Kanit', sans-serif;
+}
+.th-minimal-header {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 2rem 3rem 1rem 3rem;
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(30,41,59,0.08);
+  border-radius: 0 0 24px 24px;
+}
+.th-minimal-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  color: #3949ab;
+  font-size: 1.1rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.3rem 0.7rem;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+.th-minimal-back-btn:hover {
+  background: #e3eafc;
+}
+.th-minimal-title {
+  font-size: 1.7rem;
+  color: #1a237e;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+.th-minimal-main {
+  display: flex;
+  gap: 2.5rem;
+  justify-content: center;
+  align-items: flex-start;
+  margin-top: 2.5rem;
+}
+.th-minimal-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 32px rgba(30,41,59,0.10);
+  padding: 2rem 2.5rem;
+  min-width: 320px;
+  max-width: 420px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.th-minimal-card-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 1.2rem;
+  text-align: center;
+  color: #3949ab;
+  letter-spacing: 1px;
+}
+.th-minimal-card-title.th-text {
+  color: #ec4899;
+}
+.th-minimal-card-title.th-image {
+  color: #6366f1;
+}
+.th-minimal-empty {
+  text-align: center;
+  color: #aaa;
+  font-size: 1.1rem;
+  margin-top: 1.5rem;
+}
+.th-minimal-item {
+  background: #f3f6fa;
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 2px 8px rgba(30,41,59,0.06);
+  font-size: 1.08rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.th-minimal-label {
+  font-weight: 500;
+  color: #3949ab;
+  margin-right: 0.5rem;
+}
+.th-minimal-remove-btn {
+  align-self: flex-end;
+  background: #ef4444;
+  color: #fff;
+  padding: 0.375rem 1.25rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.th-minimal-remove-btn:hover {
+  background: #dc2626;
+}
