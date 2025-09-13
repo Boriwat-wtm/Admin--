@@ -7,7 +7,7 @@ import Report from "./AdminReport"; // นำเข้า Report
 import AdminStatSlip from "./Stat-slip"; // ชื่อ component ต้องตรงกับที่ export
 import Checklist from "./checklist";
 import ImageQueue from "./ImageQueue";
-
+import TimeHistory from "./TimeHistory";
 function App() {
   return (
     <Router>
@@ -19,6 +19,7 @@ function App() {
         <Route path="/stat-slip" element={<AdminStatSlip />} />
         <Route path="/checklist" element={<Checklist />} />
         <Route path="/image-queue" element={<ImageQueue />} />
+        <Route path="/TimeHistory" element={<TimeHistory />} />
       </Routes>
     </Router>
   );

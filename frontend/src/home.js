@@ -1,228 +1,149 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { io } from "socket.io-client";
 import "./home.css";
+
+const socket = io("http://localhost:4005");
 
 function Home() {
   const [systemOn, setSystemOn] = useState(true);
   const [mode, setMode] = useState("image");
-  const [second, setSecond] = useState("");
   const [minute, setMinute] = useState("");
-  const [hour, setHour] = useState("");
+  const [second, setSecond] = useState("");
   const [price, setPrice] = useState("");
 
-  const handleSave = () => {
-    alert(
-      `บันทึกสำเร็จ\nประเภท: ${mode === "image" ? "รูปภาพ" : "ข้อความ"}\nเวลา: ${hour} ชม. ${minute} นาที ${second} วินาที\nราคา: ${price} บาท`
-    );
-  };
+  useEffect(() => {
+    socket.on("configUpdate", (config) => {
+      setSystemOn(config.systemOn);
+    });
+    socket.emit("getConfig");
+    return () => socket.off("configUpdate");
+  }, []);
 
   const handleToggleSystem = () => {
-    setSystemOn((prev) => !prev);
-    // ส่งสถานะไป backend เพื่อ sync กับ user
+    setSystemOn((prev) => {
+      const newStatus = !prev;
+      socket.emit("adminUpdateConfig", { systemOn: newStatus });
+      return newStatus;
+    });
+  };
+
+  const handleSave = () => {
+    if (!minute && !second) {
+      alert("กรุณากรอกเวลาอย่างน้อย 1 ช่อง");
+      return;
+    }
+    if (!price) {
+      alert("กรุณากรอกราคา");
+      return;
+    }
+    const packageData = {
+      id: Date.now(),
+      mode,
+      date: new Date().toLocaleString(),
+      duration: `${minute ? minute + " นาที" : ""}${second ? (minute ? " " : "") + second + " วินาที" : ""}`,
+      price: price,
+    };
+    socket.emit("addSetting", packageData);
+    setMinute("");
+    setSecond("");
+    setPrice("");
+    alert("บันทึกแพ็คเกจสำเร็จ");
   };
 
   return (
-    <div className="home-container">
-      {/* Header bar */}
-      <header
-        className="main-header"
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100vw",
-          maxWidth: "100vw",
-          zIndex: 100,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "1.2rem 2.5rem",
-          boxSizing: "border-box",
-          background: "#fff",
-          boxShadow: "0 2px 12px rgba(30, 41, 59, 0.08)",
-        }}
-      >
-        <div className="main-header-title" style={{ fontSize: "2.2rem", color: "#1a237e", fontWeight: "bold" }}>
-          CMS ADMIN
+    <div className="admin-home-minimal">
+      <header className="admin-header-minimal">
+        <div className="brand-minimal">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#3949ab" strokeWidth="2">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+            <line x1="8" y1="21" x2="16" y2="21"/>
+            <line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+          <span className="brand-title">CMS ADMIN</span>
         </div>
-        <div className="status-row-header" style={{ display: "flex", alignItems: "center" }}>
-          <Link to="/stat-slip">
-            <button
-              style={{
-                width: 130,
-                background: "#2563eb",
-                color: "#fff",
-                border: "none",
-                borderRadius: 8,
-                padding: "8px 0",
-                fontWeight: 500,
-                fontSize: "1rem",
-                boxShadow: "0 2px 8px rgba(30,41,59,0.08)",
-                transition: "background 0.2s, box-shadow 0.2s",
-                cursor: "pointer",
-                marginRight: 18
-              }}
-              onMouseOver={e => e.currentTarget.style.background = "#1d4ed8"}
-              onMouseOut={e => e.currentTarget.style.background = "#2563eb"}
-            >
-              Check slip
-            </button>
-          </Link>
-          <Link to="/report">
-            <button
-              style={{
-                width: 130,
-                background: "#64748b",
-                color: "#fff",
-                border: "none",
-                borderRadius: 8,
-                padding: "8px 0",
-                fontWeight: 500,
-                fontSize: "1rem",
-                boxShadow: "0 2px 8px rgba(30,41,59,0.08)",
-                transition: "background 0.2s, box-shadow 0.2s",
-                cursor: "pointer",
-                marginRight: 18
-              }}
-              onMouseOver={e => e.currentTarget.style.background = "#475569"}
-              onMouseOut={e => e.currentTarget.style.background = "#64748b"}
-            >
-              Report
-            </button>
-          </Link>
-          <Link to="/image-queue">
-            <button
-              style={{
-                width: 130,
-                background: "#dc2626",
-                color: "#fff",
-                border: "none",
-                borderRadius: 8,
-                padding: "8px 0",
-                fontWeight: 500,
-                fontSize: "1rem",
-                boxShadow: "0 2px 8px rgba(30,41,59,0.08)",
-                transition: "background 0.2s, box-shadow 0.2s",
-                cursor: "pointer",
-                marginRight: 18
-              }}
-              onMouseOver={e => e.currentTarget.style.background = "#b91c1c"}
-              onMouseOut={e => e.currentTarget.style.background = "#dc2626"}
-            >
-              Image Queue
-            </button>
-          </Link>
-          <Link to="/checklist">
-            <button
-              style={{
-                width: 130,
-                background: "#059669",
-                color: "#fff",
-                border: "none",
-                borderRadius: 8,
-                padding: "8px 0",
-                fontWeight: 500,
-                fontSize: "1rem",
-                boxShadow: "0 2px 8px rgba(30,41,59,0.08)",
-                transition: "background 0.2s, box-shadow 0.2s",
-                cursor: "pointer",
-                marginRight: 32
-              }}
-              onMouseOver={e => e.currentTarget.style.background = "#047857"}
-              onMouseOut={e => e.currentTarget.style.background = "#059669"}
-            >
-              Checklist
-            </button>
-          </Link>
-          <span className="status-label" style={{ marginRight: 10 }}>สถานะระบบ:</span>
-          <div
-            className={`switch-track ${systemOn ? "switch-on" : "switch-off"}`}
-            onClick={handleToggleSystem}
-            style={{ cursor: "pointer" }}
-            title={systemOn ? "ปิดระบบ" : "เปิดระบบ"}
-          >
-            <div className="switch-thumb"></div>
-          </div>
-        </div>
+        <nav className="nav-minimal">
+          <a href="/TimeHistory">ประวัติการตั้งเวลา</a>
+          <a href="/image-queue">ตรวจสอบรูปภาพ</a>
+          <a href="/stat-slip">ตรวจสอบสลิป</a>
+          <a href="/report">รายงาน</a>
+        </nav>
       </header>
 
-      {/* Main content */}
-      <main className="main-content" style={{ marginTop: "90px" }}>
-        <section className="mode-row">
-          <span>ตั้งค่าสำหรับ:</span>
-          <button
-            className={`mode-btn${mode === "image" ? " active" : ""}`}
-            onClick={() => setMode("image")}
-            disabled={!systemOn}
+      <main className="admin-main-minimal">
+        <div className="system-status-row">
+          <span className="system-label">สถานะระบบ:</span>
+          <div
+            className={`switch-minimal ${systemOn ? "on" : "off"}`}
+            onClick={handleToggleSystem}
+            title={systemOn ? "ปิดระบบ" : "เปิดระบบ"}
           >
-            รูปภาพ
-          </button>
-          <button
-            className={`mode-btn${mode === "text" ? " active" : ""}`}
-            onClick={() => setMode("text")}
-            disabled={!systemOn}
-          >
-            ข้อความ
-          </button>
-        </section>
+            <div className="switch-dot"></div>
+          </div>
+          <span className={`system-status-text ${systemOn ? "on" : "off"}`}>
+            {systemOn ? "เปิด" : "ปิด"}
+          </span>
+        </div>
         {!systemOn && (
-          <div className="system-off-msg" style={{ marginTop: 10 }}>
-            * ระบบถูกปิด ฝั่ง user จะไม่สามารถเลือกส่งภาพหรือข้อความได้
+          <div className="system-off-msg-minimal">
+            ระบบถูกปิด ฝั่งผู้ใช้จะไม่สามารถใช้งานได้
           </div>
         )}
 
-        <section className="setting-row">
-          <div className="time-row">
-            <label>ตั้งเวลา (เลือกอย่างน้อย 1 ช่อง):</label>
-            <div className="time-inputs">
-              <input
-                type="number"
-                min="1"
-                max="59"
-                placeholder="วินาที"
-                value={second}
-                onChange={(e) => setSecond(e.target.value)}
-                disabled={!systemOn}
-              />
-              <input
-                type="number"
-                min="1"
-                max="59"
-                placeholder="นาที"
-                value={minute}
-                onChange={(e) => setMinute(e.target.value)}
-                disabled={!systemOn}
-              />
-              <input
-                type="number"
-                min="1"
-                max="24"
-                placeholder="ชั่วโมง"
-                value={hour}
-                onChange={(e) => setHour(e.target.value)}
-                disabled={!systemOn}
-              />
-            </div>
+        <section className="setting-card-minimal">
+          <h2>ตั้งค่าแพ็คเกจ</h2>
+          <div className="mode-select-row">
+            <button
+              className={`mode-btn-minimal${mode === "image" ? " active" : ""}`}
+              onClick={() => setMode("image")}
+              disabled={!systemOn}
+            >
+              รูปภาพ
+            </button>
+            <button
+              className={`mode-btn-minimal${mode === "text" ? " active" : ""}`}
+              onClick={() => setMode("text")}
+              disabled={!systemOn}
+            >
+              ข้อความ
+            </button>
           </div>
-
-          <div className="price-row">
-            <label>ตั้งราคา (บาท):</label>
+          <div className="input-row-minimal">
             <input
               type="number"
               min="1"
-              placeholder="ราคา"
+              max="59"
+              placeholder="นาที"
+              value={minute}
+              onChange={(e) => setMinute(e.target.value)}
+              disabled={!systemOn}
+              className="input-minimal"
+            />
+            <input
+              type="number"
+              min="1"
+              max="59"
+              placeholder="วินาที"
+              value={second}
+              onChange={(e) => setSecond(e.target.value)}
+              disabled={!systemOn}
+              className="input-minimal"
+            />
+            <input
+              type="number"
+              min="1"
+              placeholder="ราคา (บาท)"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
               disabled={!systemOn}
+              className="input-minimal"
             />
           </div>
-
           <button
-            className="save-btn"
+            className="save-btn-minimal"
             onClick={handleSave}
             disabled={!systemOn}
           >
-            บันทึก
+            บันทึกแพ็คเกจ
           </button>
         </section>
       </main>

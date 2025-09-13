@@ -1,0 +1,8 @@
+{
+  "systemOn": true,
+  "enableImage": true,
+  "enableText": true,
+  "price": 100,
+  "time": 10,
+  "settings": []
+}
