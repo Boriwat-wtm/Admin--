@@ -64,8 +64,9 @@ function Home() {
         <nav className="nav-minimal">
           <a href="/TimeHistory">ประวัติการตั้งเวลา</a>
           <a href="/image-queue">ตรวจสอบรูปภาพ</a>
-          <a href="/stat-slip">ตรวจสอบสลิป</a>
           <a href="/report">รายงาน</a>
+          <a href="/check-history">ประวัติการตรวจสอบ</a>
+          <a href="/lucky-wheel">วงล้อเสี่ยงดวง</a>
         </nav>
       </header>
 

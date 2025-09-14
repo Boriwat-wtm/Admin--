@@ -1,0 +1,30 @@
+[
+  {
+    "id": "1757845060822",
+    "text": "",
+    "type": "image",
+    "time": 1,
+    "price": 0,
+    "sender": "Unknown",
+    "textColor": "white",
+    "filePath": "/uploads/1757845060812.png",
+    "status": "approved",
+    "createdAt": "2025-09-14T10:17:40.822Z",
+    "receivedAt": "2025-09-14T10:17:40.822Z",
+    "checkedAt": "2025-09-14T10:17:49.357Z"
+  },
+  {
+    "id": "1757845154155",
+    "text": "",
+    "type": "image",
+    "time": 1,
+    "price": 0,
+    "sender": "Unknown",
+    "textColor": "white",
+    "filePath": "/uploads/1757845154142.png",
+    "status": "approved",
+    "createdAt": "2025-09-14T10:19:14.155Z",
+    "receivedAt": "2025-09-14T10:19:14.155Z",
+    "checkedAt": "2025-09-14T10:19:24.190Z"
+  }
+]
