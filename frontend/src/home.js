@@ -6,6 +6,8 @@ const socket = io("http://localhost:4005");
 
 function Home() {
   const [systemOn, setSystemOn] = useState(true);
+  const [enableImage, setEnableImage] = useState(true);
+  const [enableText, setEnableText] = useState(true);
   const [mode, setMode] = useState("image");
   const [minute, setMinute] = useState("");
   const [second, setSecond] = useState("");
@@ -14,16 +16,57 @@ function Home() {
   useEffect(() => {
     socket.on("configUpdate", (config) => {
       setSystemOn(config.systemOn);
+      setEnableImage(config.enableImage);
+      setEnableText(config.enableText);
     });
     socket.emit("getConfig");
     return () => socket.off("configUpdate");
   }, []);
 
+  // เมื่อกดปุ่มเปิด/ปิดระบบ
   const handleToggleSystem = () => {
-    setSystemOn((prev) => {
-      const newStatus = !prev;
-      socket.emit("adminUpdateConfig", { systemOn: newStatus });
-      return newStatus;
+    const newStatus = !systemOn;
+    setSystemOn(newStatus);
+    // ถ้าปิดระบบ ให้ปิดทุกฟังก์ชันด้วย
+    if (!newStatus) {
+      setEnableImage(false);
+      setEnableText(false);
+      socket.emit("adminUpdateConfig", {
+        systemOn: newStatus,
+        enableImage: false,
+        enableText: false,
+      });
+    } else {
+      // ถ้าเปิดระบบใหม่ ให้เปิดทุกฟังก์ชัน
+      setEnableImage(true);
+      setEnableText(true);
+      socket.emit("adminUpdateConfig", {
+        systemOn: newStatus,
+        enableImage: true,
+        enableText: true,
+      });
+    }
+  };
+
+  // เปิด/ปิดฟังก์ชันส่งรูป
+  const handleToggleImage = () => {
+    const newStatus = !enableImage;
+    setEnableImage(newStatus);
+    socket.emit("adminUpdateConfig", {
+      enableImage: newStatus,
+      systemOn,
+      enableText,
+    });
+  };
+
+  // เปิด/ปิดฟังก์ชันข้อความ
+  const handleToggleText = () => {
+    const newStatus = !enableText;
+    setEnableText(newStatus);
+    socket.emit("adminUpdateConfig", {
+      enableText: newStatus,
+      systemOn,
+      enableImage,
     });
   };
 
@@ -89,6 +132,26 @@ function Home() {
             ระบบถูกปิด ฝั่งผู้ใช้จะไม่สามารถใช้งานได้
           </div>
         )}
+
+        {/* ปุ่มเปิด/ปิดฟังก์ชันแต่ละอัน */}
+        <div className="function-toggle-row">
+          <span>ฟังก์ชันส่งรูปภาพ:</span>
+          <button
+            className={`toggle-btn-minimal${enableImage ? " on" : " off"}`}
+            onClick={handleToggleImage}
+            disabled={!systemOn}
+          >
+            {enableImage ? "เปิด" : "ปิด"}
+          </button>
+          <span>ฟังก์ชันข้อความ:</span>
+          <button
+            className={`toggle-btn-minimal${enableText ? " on" : " off"}`}
+            onClick={handleToggleText}
+            disabled={!systemOn}
+          >
+            {enableText ? "เปิด" : "ปิด"}
+          </button>
+        </div>
 
         <section className="setting-card-minimal">
           <h2>ตั้งค่าแพ็คเกจ</h2>

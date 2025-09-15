@@ -133,34 +133,40 @@ app.post("/login", async (req, res) => {
 // API สำหรับรับข้อมูลจาก User backend
 app.post("/api/upload", upload.single("file"), (req, res) => {
   try {
-    console.log("=== Received upload request");
-    console.log("Body:", req.body);
-    console.log("File:", req.file);
-    
-    const { text, type, time, price, sender, textColor } = req.body;
-    
-    const newImage = {
-      id: Date.now().toString(),
-      text: text || "",
+    const {
       type,
-      time: parseInt(time) || 0,
-      price: parseFloat(price) || 0,
+      text,
+      time,
+      price,
+      sender,
+      textColor,
+      socialType,
+      socialName,
+      composed
+    } = req.body;
+
+    const item = {
+      id: Date.now().toString(),
+      type,
+      text: text || "",
+      time: Number(time) || 0,
+      price: Number(price) || 0,
       sender: sender || "Unknown",
-      textColor: textColor || 'white',
-      filePath: req.file ? `/uploads/${req.file.filename}` : null,
-      status: 'pending',
+      textColor: textColor || "white",
+      socialType: socialType || null,
+      socialName: socialName || null,
+      filePath: req.file ? "/uploads/" + req.file.filename : null,
+      composed: composed === "1" || composed === "true",
+      status: "pending",
       createdAt: new Date().toISOString(),
       receivedAt: new Date().toISOString()
     };
-    
-    imageQueue.push(newImage);
-    console.log('Added to queue:', newImage);
-    console.log('Current queue length:', imageQueue.length);
-    
-    res.json({ success: true, message: 'Upload received successfully' });
-  } catch (error) {
-    console.error('Error receiving upload:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+
+    imageQueue.push(item);
+    res.json({ success: true, uploadId: item.id });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false });
   }
 });
 
@@ -401,5 +407,59 @@ app.listen(PORT, async () => {
   } catch (error) {
     console.error("Error loading users:", error);
   }
+});
+
+// ----- Reports Storage -----
+const reportsPath = path.join(__dirname, "reports.json");
+let reports = [];
+if (fs.existsSync(reportsPath)) {
+  try {
+    reports = JSON.parse(fs.readFileSync(reportsPath, "utf8"));
+  } catch {
+    reports = [];
+  }
+}
+function saveReports() {
+  fs.writeFileSync(reportsPath, JSON.stringify(reports, null, 2));
+}
+
+// POST: user ส่งรีพอร์ต
+app.post("/api/report", (req, res) => {
+  const { category, detail } = req.body;
+  if (!category || !detail || !detail.trim()) {
+    return res.status(400).json({ success: false, message: "INVALID_DATA" });
+  }
+  const report = {
+    id: Date.now().toString(),
+    category,
+    detail: detail.trim(),
+    status: "new",            // new | reading | resolved
+    createdAt: new Date().toISOString()
+  };
+  reports.push(report);
+  saveReports();
+
+  // ถ้ามี io/socket อยู่ในไฟล์นี้สามารถ emit ได้ เช่น:
+  // io.emit("newReport", report);
+
+  return res.json({ success: true, report });
+});
+
+// GET: admin ดูรายการ
+app.get("/api/reports", (req, res) => {
+  res.json(reports);
+});
+
+// PATCH: admin อัปเดตสถานะ
+app.patch("/api/reports/:id", (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const r = reports.find(rp => rp.id === id);
+  if (!r) return res.status(404).json({ success: false, message: "NOT_FOUND" });
+  if (status) r.status = status;
+  r.updatedAt = new Date().toISOString();
+  saveReports();
+  // io.emit("updateReport", r);
+  res.json({ success: true, report: r });
 });
 

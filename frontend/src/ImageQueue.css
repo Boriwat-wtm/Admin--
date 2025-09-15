@@ -159,10 +159,12 @@
 
 .modal-image {
   width: 100%;
-  height: 100%;
-  object-fit: contain; /* ต้องเป็น contain เท่านั้น */
-  background: #e3eafc;
-  border-radius: 12px;
+  height: auto;
+  max-height: 400px; /* หรือ 100% ถ้า modal สูงพอ */
+  object-fit: contain;
+  border-radius: 18px;
+  display: block;
+  margin: 0 auto;
 }
 
 .text-overlay {
@@ -276,8 +278,12 @@
 
 .modal-image {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  max-height: 400px; /* หรือ 100% ถ้า modal สูงพอ */
+  object-fit: contain;
+  border-radius: 18px;
+  display: block;
+  margin: 0 auto;
 }
 
 .modal-text-overlay {

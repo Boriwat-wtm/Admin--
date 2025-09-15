@@ -274,24 +274,76 @@ function ImageQueue() {
                       <span className="queue-number">#{index + 1}</span>
                       <span className="sender">{image.sender}</span>
                     </div>
-                    
                     <div className="image-preview-container" style={{ position: "relative" }}>
-                      <img 
-                        src={`http://localhost:5001${image.filePath}`} 
-                        alt="Preview"
-                        className="preview-image"
-                        onError={(e) => {
-                          e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y5ZmFmYiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0cHgiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5No Image</text></svg>';
-                        }}
-                      />
-                      {image.socialType && image.socialName && (
-                        <div className="preview-social-overlay">
-                          {renderSocialOnImage(image.socialType, image.socialName)}
+                      {image.filePath ? (
+                        <>
+                          <img
+                            src={`http://localhost:5001${image.filePath}`}
+                            alt="Preview"
+                            className="preview-image"
+                          />
+                          {(!image.composed && image.socialType && image.socialName) && (
+                            <div className="preview-social-overlay">
+                              {renderSocialOnImage(image.socialType, image.socialName)}
+                            </div>
+                          )}
+                          {(!image.composed && image.text) && (
+                            <div className="preview-text-overlay" style={{ color: image.textColor }}>
+                              {image.text}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        // กรณีข้อความล้วนเหมือนเดิม
+                        <div
+                          className="text-only-card"
+                          style={{
+                            background: "linear-gradient(135deg,#233046 60%,#1e293b 100%)",
+                            borderRadius: "18px",
+                            minHeight: "120px",
+                            minWidth: "100%",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            margin: "0 auto",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                            padding: "24px 0"
+                          }}
+                        >
+                          {image.socialType && image.socialName && (
+                            <div
+                              style={{
+                                marginBottom: "16px",
+                                marginTop: "8px",
+                                color: "#fff",
+                                fontWeight: "bold",
+                                fontSize: "24px",
+                                maxWidth: "100%",
+                                wordBreak: "break-all",
+                                display: "inline-flex",
+                                alignItems: "center"
+                              }}
+                            >
+                              {renderSocialOnImage(image.socialType, image.socialName)}
+                            </div>
+                          )}
+                          <div
+                            style={{
+                              color: image.textColor || "#fff",
+                              fontWeight: "bold",
+                              fontSize: "20px",
+                              textShadow: image.textColor === "white"
+                                ? "0 2px 8px rgba(0,0,0,0.8)"
+                                : "0 2px 8px rgba(255,255,255,0.8)",
+                              textAlign: "center",
+                              wordBreak: "break-all"
+                            }}
+                          >
+                            {image.text}
+                          </div>
                         </div>
                       )}
-                      <div className="preview-text-overlay" style={{ color: image.textColor }}>
-                        {image.text}
-                      </div>
                     </div>
                     
                     <div className="card-footer">
@@ -316,66 +368,65 @@ function ImageQueue() {
             {currentPreview ? (
               <>
                 <div className="preview-image-container" style={{ position: "relative" }}>
-                  <img 
-                    src={`http://localhost:5001${currentPreview.filePath}`} 
-                    alt="Preview"
-                    className="preview-image"
-                    onError={(e) => {
-                      e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y5ZmFmYiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0cHgiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5No Image</text></svg>';
-                    }}
-                  />
-                  <div
-                    className="preview-overlay-center"
-                    style={{
-                      position: "absolute",
-                      top: "50%",
-                      left: "50%",
-                      transform: "translate(-50%, -50%)",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      width: "90%",
-                      zIndex: 2,
-                      textAlign: "center",
-                      pointerEvents: "none"
-                    }}
-                  >
-                    {currentPreview.socialType && currentPreview.socialName && (
-                      <div className="preview-social-overlay" style={{
-                        marginBottom: "8px",
-                        color: "#fff",
-                        background: "rgba(0,0,0,0.5)",
-                        padding: "6px 16px",
-                        borderRadius: "8px",
-                        fontWeight: "bold",
-                        fontSize: "16px",
-                        maxWidth: "100%",
-                        wordBreak: "break-all"
-                      }}>
-                        {renderSocialOnImage(currentPreview.socialType, currentPreview.socialName)}
-                      </div>
-                    )}
-                    {currentPreview.text && (
-                      <div 
-                        className="preview-text-overlay"
-                        style={{ 
-                          color: currentPreview.textColor || 'white',
-                          background: "rgba(0,0,0,0.5)",
-                          borderRadius: "8px",
-                          padding: "6px 16px",
+                  {currentPreview.filePath ? (
+                    <img 
+                      src={`http://localhost:5001${currentPreview.filePath}`} 
+                      alt="Preview"
+                      className="preview-image"
+                      onError={(e) => {
+                        e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y5ZmFmYiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0cHgiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5No Image</text></svg>';
+                      }}
+                    />
+                  ) : (
+                    // กรณีไม่มีรูป (ฟังก์ชันส่งข้อความ)
+                    <div
+                      style={{
+                        background: "linear-gradient(135deg,#233046 60%,#1e293b 100%)",
+                        borderRadius: "18px",
+                        minHeight: "120px",
+                        minWidth: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        margin: "0 auto",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                        padding: "24px 0"
+                      }}
+                    >
+                      {currentPreview.socialType && currentPreview.socialName && (
+                        <div
+                          style={{
+                            marginBottom: "16px",
+                            marginTop: "8px",
+                            color: "#fff",
+                            fontWeight: "bold",
+                            fontSize: "24px",
+                            maxWidth: "100%",
+                            wordBreak: "break-all",
+                            display: "inline-flex",
+                            alignItems: "center"
+                          }}
+                        >
+                          {renderSocialOnImage(currentPreview.socialType, currentPreview.socialName)}
+                        </div>
+                      )}
+                      <div
+                        style={{
+                          color: currentPreview.textColor || "#fff",
                           fontWeight: "bold",
-                          fontSize: "18px",
-                          textShadow: currentPreview.textColor === 'white'
-                            ? '0 2px 8px rgba(0,0,0,0.8)'
-                            : '0 2px 8px rgba(255,255,255,0.8)',
-                          maxWidth: "100%",
+                          fontSize: "20px",
+                          textShadow: currentPreview.textColor === "white"
+                            ? "0 2px 8px rgba(0,0,0,0.8)"
+                            : "0 2px 8px rgba(255,255,255,0.8)",
+                          textAlign: "center",
                           wordBreak: "break-all"
                         }}
                       >
                         {currentPreview.text}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="countdown-section">
@@ -478,9 +529,9 @@ function ImageQueue() {
       {/* Modal สำหรับดูรายละเอียด */}
       {showModal && selectedImage && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>รายละเอียดรูปภาพ</h2>
+              <h2>รายละเอียด{selectedImage.filePath ? "รูปภาพ" : "ข้อความ"}</h2>
               <button className="close-button" onClick={() => setShowModal(false)}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18"/>
@@ -488,23 +539,70 @@ function ImageQueue() {
                 </svg>
               </button>
             </div>
-            
             <div className="modal-body">
               <div className="modal-image-container">
-                <img 
-                  src={`http://localhost:5001${selectedImage.filePath}`} 
-                  alt="Full preview"
-                  className="modal-image"
-                />
-                {selectedImage.text && (
-                  <div 
-                    className="modal-text-overlay"
-                    style={{ 
-                      color: selectedImage.textColor || 'white',
-                      textShadow: selectedImage.textColor === 'white' ? '0 2px 8px rgba(0,0,0,0.8)' : '0 2px 8px rgba(255,255,255,0.8)'
+                {selectedImage.filePath ? (
+                  <img 
+                    src={`http://localhost:5001${selectedImage.filePath}`} 
+                    alt="Full preview"
+                    className="modal-image"
+                    style={{
+                      width: "100%",
+                      height: "auto",
+                      maxHeight: "400px", // ปรับตามขนาด modal ที่ต้องการ
+                      objectFit: "contain",
+                      borderRadius: "18px",
+                      display: "block",
+                      margin: "0 auto"
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      background: "linear-gradient(135deg,#233046 60%,#1e293b 100%)",
+                      borderRadius: "18px",
+                      minHeight: "80px",
+                      minWidth: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      margin: "0 auto",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                      padding: "24px 0"
                     }}
                   >
-                    {selectedImage.text}
+                    {selectedImage.socialType && selectedImage.socialName && (
+                      <div
+                        style={{
+                          marginBottom: "16px",
+                          marginTop: "8px",
+                          color: "#fff",
+                          fontWeight: "bold",
+                          fontSize: "24px",
+                          maxWidth: "100%",
+                          wordBreak: "break-all",
+                          display: "inline-flex",
+                          alignItems: "center"
+                        }}
+                      >
+                        {renderSocialOnImage(selectedImage.socialType, selectedImage.socialName)}
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        color: selectedImage.textColor || "#fff",
+                        fontWeight: "bold",
+                        fontSize: "20px",
+                        textShadow: selectedImage.textColor === "white"
+                          ? "0 2px 8px rgba(0,0,0,0.8)"
+                          : "0 2px 8px rgba(255,255,255,0.8)",
+                        textAlign: "center",
+                        wordBreak: "break-all"
+                      }}
+                    >
+                      {selectedImage.text}
+                    </div>
                   </div>
                 )}
               </div>
