@@ -364,6 +364,29 @@
   color: #aaa;
   cursor: not-allowed;
 }
+.toggle-btn-minimal {
+  margin: 0 8px;
+  padding: 4px 16px;
+  border-radius: 8px;
+  border: none;
+  background: #eee;
+  color: #333;
+  cursor: pointer;
+}
+.toggle-btn-minimal.on {
+  background: #4caf50;
+  color: #fff;
+}
+.toggle-btn-minimal.off {
+  background: #f44336;
+  color: #fff;
+}
+.function-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
 
 /* Responsive */
 @media (max-width: 600px) {

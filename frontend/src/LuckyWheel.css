@@ -1,0 +1,210 @@
+.lucky-wheel-container {
+  max-width: 600px;
+  margin: 30px auto 0 auto;
+  background: #f8fafc;
+  border-radius: 18px;
+  box-shadow: 0 2px 24px 0 rgba(30,41,59,.10);
+  padding: 32px 24px 40px 24px;
+  text-align: center;
+}
+.lucky-wheel-flex {
+  display: flex;
+  gap: 24px;
+  max-width: 820px;
+  margin: 30px auto 0 auto;
+  background: #f8fafc;
+  border-radius: 18px;
+  box-shadow: 0 2px 24px 0 rgba(30,41,59,.10);
+  padding: 24px 18px 32px 18px;
+}
+.lucky-wheel-left {
+  flex: 1 1 270px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.lucky-wheel-right {
+  flex: 1 1 240px;
+  min-width: 220px;
+  max-width: 300px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 1px 8px rgba(30,41,59,0.06);
+  padding: 14px 14px 8px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.lucky-wheel-right h3 {
+  margin-top: 0;
+  margin-bottom: 4px;
+  font-size: 1.05rem;
+  color: #1e293b;
+}
+.wheel-controls {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.wheel-edit-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-start;
+  margin-bottom: 6px;
+  max-height: 450px;
+  overflow-y: auto;
+}
+.wheel-segment-edit {
+  background: #f1f5f9;
+  border-radius: 7px;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 15px;
+}
+.wheel-area {
+  position: relative;
+  width: 360px;
+  height: 360px;
+  margin: 0 auto 0 auto;
+}
+.wheel-pointer {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 18px solid transparent;
+  border-right: 18px solid transparent;
+  border-top: 0 solid transparent;
+  border-bottom: 32px solid #f59e42;
+  z-index: 2;
+  /* แหลมชี้เข้าในวงล้อ */
+}
+.wheel-svg {
+  position: relative;
+  z-index: 1;
+  width: 360px;
+  height: 360px;
+}
+.spin-btn {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 12px;
+}
+.spin-btn:disabled {
+  background: #bdbdbd;
+  cursor: not-allowed;
+}
+.reward-row {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.05rem;
+}
+.reward-input {
+  flex: 1;
+  border-radius: 7px;
+  border: 1.2px solid #cbd5e1;
+  padding: 5px 8px;
+  font-size: 1rem;
+  background: #f9fafb;
+}
+.winner-popup {
+  position: fixed;
+  left: 0; top: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.winner-popup.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.winner-popup-content {
+  background: #fff;
+  border-radius: 18px;
+  padding: 32px 24px 28px 24px;
+  min-width: 260px;
+  min-height: 140px;
+  box-shadow: 0 4px 32px 0 rgba(30,41,59,.18);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: winner-pop 0.5s cubic-bezier(.17,.67,.83,.67);
+  position: relative;
+}
+@keyframes winner-pop {
+  0% { transform: scale(0.7); opacity: 0; }
+  70% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.winner-title {
+  font-size: 1.2rem;
+  color: #1e293b;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+.winner-name {
+  font-size: 1.7rem;
+  color: #059669;
+  font-weight: bold;
+  margin-bottom: 8px;
+  margin-top: 4px;
+  text-shadow: 0 2px 8px #d1fae5;
+  letter-spacing: 1px;
+}
+.winner-firework {
+  font-size: 1.7rem;
+  margin-bottom: 2px;
+  animation: fireworks 1.2s linear infinite alternate;
+}
+@keyframes fireworks {
+  0% { transform: scale(1) rotate(-10deg);}
+  100% { transform: scale(1.2) rotate(10deg);}
+}
+.winner-close-btn {
+  background: #64748b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  padding: 7px 24px;
+  margin-top: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.winner-close-btn:hover {
+  background: #334155;
+}
+.winner-reward {
+  margin-top: 4px;
+  font-size: 1.05rem;
+  color: #1e293b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.winner-reward-value {
+  color: #f59e42;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-top: 2px;
+}
