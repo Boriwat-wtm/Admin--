@@ -8,19 +8,23 @@ function Home() {
   const [systemOn, setSystemOn] = useState(true);
   const [enableImage, setEnableImage] = useState(true);
   const [enableText, setEnableText] = useState(true);
+  const [enableGift, setEnableGift] = useState(true);
+  const [enableBirthday, setEnableBirthday] = useState(true);
   const [mode, setMode] = useState("image");
   const [minute, setMinute] = useState("");
   const [second, setSecond] = useState("");
   const [price, setPrice] = useState("");
 
   useEffect(() => {
-    socket.on("configUpdate", (config) => {
+    socket.on("status", (config) => {
       setSystemOn(config.systemOn);
       setEnableImage(config.enableImage);
       setEnableText(config.enableText);
+      setEnableGift(config.enableGift ?? true);
+      setEnableBirthday(config.enableBirthday ?? true);
     });
     socket.emit("getConfig");
-    return () => socket.off("configUpdate");
+    return () => socket.off("status");
   }, []);
 
   // เมื่อกดปุ่มเปิด/ปิดระบบ
@@ -31,19 +35,27 @@ function Home() {
     if (!newStatus) {
       setEnableImage(false);
       setEnableText(false);
+      setEnableGift(false);
+      setEnableBirthday(false);
       socket.emit("adminUpdateConfig", {
         systemOn: newStatus,
         enableImage: false,
         enableText: false,
+        enableGift: false,
+        enableBirthday: false,
       });
     } else {
       // ถ้าเปิดระบบใหม่ ให้เปิดทุกฟังก์ชัน
       setEnableImage(true);
       setEnableText(true);
+      setEnableGift(true);
+      setEnableBirthday(true);
       socket.emit("adminUpdateConfig", {
         systemOn: newStatus,
         enableImage: true,
         enableText: true,
+        enableGift: true,
+        enableBirthday: true,
       });
     }
   };
@@ -56,6 +68,8 @@ function Home() {
       enableImage: newStatus,
       systemOn,
       enableText,
+      enableGift,
+      enableBirthday,
     });
   };
 
@@ -67,6 +81,33 @@ function Home() {
       enableText: newStatus,
       systemOn,
       enableImage,
+      enableGift,
+      enableBirthday,
+    });
+  };
+
+  const handleToggleGift = () => {
+    const newStatus = !enableGift;
+    setEnableGift(newStatus);
+    socket.emit("adminUpdateConfig", {
+      enableGift: newStatus,
+      systemOn,
+      enableImage,
+      enableText,
+      enableBirthday,
+    });
+  };
+
+  // เปิด/ปิดฟังก์ชันอวยพรวันเกิด
+  const handleToggleBirthday = () => {
+    const newStatus = !enableBirthday;
+    setEnableBirthday(newStatus);
+    socket.emit("adminUpdateConfig", {
+      enableBirthday: newStatus,
+      systemOn,
+      enableImage,
+      enableText,
+      enableGift,
     });
   };
 
@@ -75,16 +116,19 @@ function Home() {
       alert("กรุณากรอกเวลาอย่างน้อย 1 ช่อง");
       return;
     }
-    if (!price) {
+    if (!price && mode !== "birthday") {
       alert("กรุณากรอกราคา");
       return;
     }
+    const totalSeconds = (parseInt(minute) || 0) * 60 + (parseInt(second) || 0);
+    const durationDisplay = `${minute ? minute + " นาที" : ""}${second ? (minute ? " " : "") + second + " วินาที" : ""}`;
     const packageData = {
       id: Date.now(),
       mode,
       date: new Date().toLocaleString(),
-      duration: `${minute ? minute + " นาที" : ""}${second ? (minute ? " " : "") + second + " วินาที" : ""}`,
-      price: price,
+      duration: durationDisplay,
+      time: totalSeconds,
+      price: mode === "birthday" ? 0 : price,
     };
     socket.emit("addSetting", packageData);
     setMinute("");
@@ -110,6 +154,7 @@ function Home() {
           <a href="/report">รายงาน</a>
           <a href="/check-history">ประวัติการตรวจสอบ</a>
           <a href="/lucky-wheel">วงล้อเสี่ยงดวง</a>
+          <a href="/gift-setting">ตั้งค่าส่งของขวัญ</a>
         </nav>
       </header>
 
@@ -151,6 +196,22 @@ function Home() {
           >
             {enableText ? "เปิด" : "ปิด"}
           </button>
+          <span>ฟังก์ชันส่งของขวัญ:</span>
+          <button
+            className={`toggle-btn-minimal${enableGift ? " on" : " off"}`}
+            onClick={handleToggleGift}
+            disabled={!systemOn}
+          >
+            {enableGift ? "เปิด" : "ปิด"}
+          </button>
+          <span>ฟังก์ชันอวยพรวันเกิด:</span>
+          <button
+            className={`toggle-btn-minimal${enableBirthday ? " on" : " off"}`}
+            onClick={handleToggleBirthday}
+            disabled={!systemOn}
+          >
+            {enableBirthday ? "เปิด" : "ปิด"}
+          </button>
         </div>
 
         <section className="setting-card-minimal">
@@ -169,6 +230,13 @@ function Home() {
               disabled={!systemOn}
             >
               ข้อความ
+            </button>
+            <button
+              className={`mode-btn-minimal${mode === "birthday" ? " active" : ""}`}
+              onClick={() => setMode("birthday")}
+              disabled={!systemOn}
+            >
+              วันเกิด
             </button>
           </div>
           <div className="input-row-minimal">

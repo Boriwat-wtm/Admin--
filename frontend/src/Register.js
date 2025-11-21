@@ -21,7 +21,7 @@ function Register() {
 
       const data = await response.json();
       if (response.ok && data.success) {
-        alert("เข้าสู่ระบบสำเร็จ!");
+        setErrorMessage("");
         navigate("/home"); // เปลี่ยนไปยังหน้า Home
       } else {
         setErrorMessage(data.message || "Username หรือ Password ไม่ถูกต้อง");
@@ -64,7 +64,15 @@ function Register() {
             )}
           </span>
         </div>
-        {errorMessage && <p className="error-message">{errorMessage}</p>}
+        {errorMessage && (
+          <div className="error-banner">
+            <div className="error-icon">⚠</div>
+            <div className="error-text">
+              <strong>เข้าสู่ระบบไม่สำเร็จ</strong>
+              <span>{errorMessage}</span>
+            </div>
+          </div>
+        )}
         <button onClick={handleLogin}>เข้าสู่ระบบ</button>
       </div>
     </div>

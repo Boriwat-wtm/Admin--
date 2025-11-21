@@ -1,327 +1,286 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import "./AdminReport.css";
+
+const API_BASE = "http://localhost:5001";
+
+const STATUS_META = {
+  new: { label: "ใหม่", badge: "status-new" },
+  reading: { label: "กำลังตรวจสอบ", badge: "status-reading" },
+  resolved: { label: "แก้ไขแล้ว", badge: "status-resolved" }
+};
+
+const CATEGORY_META = {
+  technical: { label: "ปัญหาทางเทคนิค", icon: "⚡" },
+  display: { label: "ปัญหาการแสดงผล", icon: "🖼️" },
+  payment: { label: "ปัญหาการเงิน", icon: "💰" },
+  upload: { label: "ปัญหาอัปโหลด", icon: "📁" },
+  account: { label: "บัญชีผู้ใช้", icon: "👤" },
+  suggestion: { label: "ข้อเสนอแนะ", icon: "💡" },
+  other: { label: "อื่นๆ", icon: "📝" }
+};
+
+const statusFilters = [
+  { id: "all", label: "กำลังดำเนินการ" },
+  { id: "new", label: "ใหม่" },
+  { id: "reading", label: "กำลังตรวจสอบ" },
+  { id: "resolved", label: "แก้ไขแล้ว" }
+];
 
 function AdminReport() {
-  const [report, setReport] = useState([]);
+  const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedReport, setSelectedReport] = useState(null);
-  const [statusList, setStatusList] = useState({});
+  const [error, setError] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [activeReport, setActiveReport] = useState(null);
+  const [updatingId, setUpdatingId] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:5001/api/admin/report')
-      .then(res => res.json())
-      .then(data => {
-        setReport(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    loadReports();
   }, []);
 
-  const MAX_LEN = 30;
-
-  const handleStatus = (idx, status) => {
-    setStatusList(prev => ({ ...prev, [idx]: status }));
+  const loadReports = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/api/reports`);
+      if (!res.ok) throw new Error("FAILED");
+      const data = await res.json();
+      const sorted = (data || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setReports(sorted);
+    } catch (err) {
+      console.error("โหลดรายงานไม่สำเร็จ", err);
+      setError("ไม่สามารถโหลดรายการรายงานได้");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const openDetailModal = (report) => {
-    setSelectedReport(report);
-    setShowDetailModal(true);
+  const filteredReports = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+    return reports.filter((report) => {
+      const normalizedDetail = (report.detail || "").toLowerCase();
+      const categoryLabel = (CATEGORY_META[report.category]?.label || report.category || "").toLowerCase();
+      const matchStatus = filter === "all" ? report.status !== "resolved" : report.status === filter;
+      const matchKeyword = !keyword || normalizedDetail.includes(keyword) || categoryLabel.includes(keyword);
+      return matchStatus && matchKeyword;
+    });
+  }, [reports, filter, search]);
+
+  const stats = useMemo(() => {
+    const summary = { total: reports.length, new: 0, reading: 0, resolved: 0 };
+    reports.forEach((r) => {
+      summary[r.status] = (summary[r.status] || 0) + 1;
+    });
+    return summary;
+  }, [reports]);
+
+  const handleStatusChange = async (report, status) => {
+    if (report.status === status) return;
+    setUpdatingId(report.id);
+    try {
+      const res = await fetch(`${API_BASE}/api/reports/${report.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status })
+      });
+      if (!res.ok) throw new Error("PATCH_FAILED");
+      const data = await res.json();
+      setReports((prev) => prev.map((item) => (item.id === data.report.id ? data.report : item)));
+      if (activeReport && activeReport.id === data.report.id) {
+        setActiveReport(data.report);
+      }
+    } catch (err) {
+      console.error("อัปเดตสถานะไม่สำเร็จ", err);
+      setError("ไม่สามารถอัปเดตสถานะได้");
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
-  const closeDetailModal = () => {
-    setShowDetailModal(false);
-    setSelectedReport(null);
+  const formatDate = (date) => {
+    if (!date) return "-";
+    return new Date(date).toLocaleString("th-TH", {
+      dateStyle: "medium",
+      timeStyle: "short"
+    });
   };
+
+  const renderStatusPill = (status) => {
+    const meta = STATUS_META[status] || { label: status, badge: "status-new" };
+    return <span className={`status-pill ${meta.badge}`}>{meta.label}</span>;
+  };
+
+  const viewDescription = filter === "resolved" ? "แสดงเฉพาะงานที่ปิดไปแล้ว" : "แสดงเฉพาะงานที่ยังรอดำเนินการ";
 
   return (
-    <div style={{
-      maxWidth: 800,
-      margin: "40px auto",
-      padding: 24,
-      background: "#fff",
-      borderRadius: 12,
-      boxShadow: "0 2px 12px rgba(30,41,59,0.08)"
-    }}>
-      {/* Header ปุ่ม */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <Link to="/home">
-          <button
-            style={{
-              width: 140,
-              background: "#64748b",
-              color: "#fff",
-              border: "none",
-              borderRadius: 8,
-              padding: "8px 0",
-              fontWeight: 500,
-              fontSize: "1rem",
-              boxShadow: "0 2px 8px rgba(30,41,59,0.08)",
-              transition: "background 0.2s, box-shadow 0.2s",
-              cursor: "pointer"
-            }}
-            onMouseOver={e => e.currentTarget.style.background = "#475569"}
-            onMouseOut={e => e.currentTarget.style.background = "#64748b"}
-          >
-            Home
-          </button>
-        </Link>
-        <Link to="/stat-slip">
-          <button
-            style={{
-              width: 140,
-              background: "#2563eb",
-              color: "#fff",
-              border: "none",
-              borderRadius: 8,
-              padding: "8px 0",
-              fontWeight: 500,
-              fontSize: "1rem",
-              boxShadow: "0 2px 8px rgba(30,41,59,0.08)",
-              transition: "background 0.2s, box-shadow 0.2s",
-              cursor: "pointer"
-            }}
-            onMouseOver={e => e.currentTarget.style.background = "#1d4ed8"}
-            onMouseOut={e => e.currentTarget.style.background = "#2563eb"}
-          >
-            Stat-slip
-          </button>
-        </Link>
-      </div>
-      <h2 style={{ textAlign: "center", color: "#1a237e", marginBottom: 24 }}>
-        รายการแจ้งปัญหาจากผู้ใช้
-      </h2>
+    <div className="admin-report-page">
+      <header className="admin-report-header">
+        <div className="header-texts">
+          <p className="eyebrow">ระบบรายงาน</p>
+          <h1>ศูนย์ติดตามปัญหา</h1>
+          <p className="subtitle">ข้อมูลเชื่อมต่อจากฝั่งผู้ใช้ทันที ปรับสถานะงานได้ตามจริง</p>
+        </div>
+        <div className="header-actions">
+          <Link to="/home" className="ghost-btn">กลับหน้า Home</Link>
+          <button className="primary-btn" onClick={loadReports}>รีเฟรชข้อมูล</button>
+        </div>
+      </header>
+
+      <section className="summary-grid">
+        <div className="summary-card">
+          <span className="summary-label">รายงานทั้งหมด</span>
+          <strong>{stats.total}</strong>
+        </div>
+        <div className="summary-card">
+          <span className="summary-label">ใหม่</span>
+          <strong>{stats.new || 0}</strong>
+        </div>
+        <div className="summary-card">
+          <span className="summary-label">กำลังตรวจสอบ</span>
+          <strong>{stats.reading || 0}</strong>
+        </div>
+        <div className="summary-card">
+          <span className="summary-label">แก้ไขแล้ว</span>
+          <strong>{stats.resolved || 0}</strong>
+        </div>
+      </section>
+
+      <section className="report-controls">
+        <div className="search-box">
+          <span role="img" aria-label="search">🔍</span>
+          <input
+            type="text"
+            placeholder="ค้นหาจากหมวดหมู่หรือคำอธิบาย"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="filter-group">
+          {statusFilters.map((item) => (
+            <button
+              key={item.id}
+              className={`filter-chip ${filter === item.id ? "active" : ""}`}
+              onClick={() => setFilter(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <p className="view-hint">{viewDescription}</p>
+
+      {error && <div className="error-banner-lite">{error}</div>}
+
       {loading ? (
-        <div style={{ textAlign: "center", color: "#888", padding: 24 }}>กำลังโหลด...</div>
-      ) : report.length === 0 ? (
-        <div style={{ textAlign: "center", color: "#888", padding: 24 }}>ยังไม่มีรายงาน</div>
+        <div className="state-card">กำลังโหลดข้อมูล...</div>
+      ) : filteredReports.length === 0 ? (
+        <div className="state-card">
+          {filter === "resolved" ? "ยังไม่มีงานที่ปิดแล้ว" : "ยังไม่มีรายงานในหมวดนี้"}
+        </div>
       ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "1rem" }}>
-          <thead>
-            <tr style={{ background: "#e3e8f0" }}>
-              <th style={{ padding: "10px 6px", border: "1px solid #cbd5e1" }}>หมวดหมู่</th>
-              <th style={{ padding: "10px 6px", border: "1px solid #cbd5e1" }}>รายละเอียด</th>
-              <th style={{ padding: "10px 6px", border: "1px solid #cbd5e1" }}>เวลา</th>
-              <th style={{ padding: "10px 6px", border: "1px solid #cbd5e1" }}>สถานะ</th>
-            </tr>
-          </thead>
-          <tbody>
-            {report.map((r, idx) => {
-              const isLong = r.detail.length > MAX_LEN;
-              const status = statusList[idx];
-              let rowBg = "#fff";
-              if (status === "success") rowBg = "#d1fae5"; // เขียวอ่อน
-              if (status === "problem") rowBg = "#fee2e2"; // แดงอ่อน
-              return (
-                <tr key={idx} style={{ background: rowBg, transition: "background 0.2s" }}>
-                  <td style={{ padding: "8px 6px", border: "1px solid #e2e8f0" }}>{r.category}</td>
-                  <td style={{
-                    padding: "8px 6px",
-                    border: "1px solid #e2e8f0",
-                    maxWidth: 220,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    position: "relative"
-                  }}>
-                    {isLong ? (
-                      <span>
-                        {r.detail.slice(0, MAX_LEN) + "..."}
-                        <button
-                          style={{
-                            marginLeft: 8,
-                            fontSize: "0.85em",
-                            padding: "4px 8px",
-                            borderRadius: 6,
-                            border: "1px solid #3b82f6",
-                            background: "#3b82f6",
-                            color: "#fff",
-                            cursor: "pointer",
-                            transition: "all 0.2s"
-                          }}
-                          onClick={() => openDetailModal(r)}
-                          title="ดูรายละเอียดทั้งหมด"
-                          onMouseOver={e => e.currentTarget.style.background = "#2563eb"}
-                          onMouseOut={e => e.currentTarget.style.background = "#3b82f6"}
-                        >
-                          ดูเพิ่ม
-                        </button>
-                      </span>
-                    ) : (
-                      <span>{r.detail}</span>
-                    )}
-                  </td>
-                  <td style={{ padding: "8px 6px", border: "1px solid #e2e8f0" }}>
-                    {new Date(r.date).toLocaleString()}
-                  </td>
-                  <td style={{ padding: "8px 6px", border: "1px solid #e2e8f0", textAlign: "center" }}>
-                    <button
-                      style={{
-                        background: status === "success" ? "#22c55e" : "#f3f4f6",
-                        color: status === "success" ? "#fff" : "#22c55e",
-                        border: "1px solid #22c55e",
-                        borderRadius: 6,
-                        padding: "2px 2px",
-                        marginRight: 4,
-                        cursor: status ? "not-allowed" : "pointer",
-                        fontWeight: status === "success" ? "bold" : "normal",
-                        opacity: status ? 0.7 : 1,
-                        minWidth: 24
-                      }}
-                      onClick={() => !status && handleStatus(idx, "success")}
-                      disabled={!!status}
-                      title="เรียบร้อย"
-                    >
-                      <span role="img" aria-label="success">✔️</span>
-                    </button>
-                    <button
-                      style={{
-                        background: status === "problem" ? "#ef4444" : "#f3f4f6",
-                        color: status === "problem" ? "#fff" : "#ef4444",
-                        border: "1px solid #ef4444",
-                        borderRadius: 6,
-                        padding: "2px 6px",
-                        cursor: status ? "not-allowed" : "pointer",
-                        fontWeight: status === "problem" ? "bold" : "normal",
-                        opacity: status ? 0.7 : 1,
-                        minWidth: 28
-                      }}
-                      onClick={() => !status && handleStatus(idx, "problem")}
-                      disabled={!!status}
-                      title="มีปัญหา"
-                    >
-                      <span role="img" aria-label="problem">❌</span>
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="report-list">
+          {filteredReports.map((report) => {
+            const category = CATEGORY_META[report.category] || CATEGORY_META.other;
+            return (
+              <article key={report.id} className="report-card" onClick={() => setActiveReport(report)}>
+                <div className="report-card-top">
+                  <div className="category-chip">
+                    <span>{category.icon}</span>
+                    <span>{category.label}</span>
+                  </div>
+                  {renderStatusPill(report.status)}
+                </div>
+                <p className="report-detail">{report.detail}</p>
+                <div className="report-meta">
+                  <span>{formatDate(report.createdAt)}</span>
+                  <button
+                    className="link-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveReport(report);
+                    }}
+                  >
+                    ดูรายละเอียด
+                  </button>
+                </div>
+                <div className="report-actions" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    className={`action-btn ghost ${report.status === "new" ? "active" : ""}`}
+                    onClick={() => handleStatusChange(report, "new")}
+                    disabled={updatingId === report.id}
+                  >
+                    ใหม่
+                  </button>
+                  <button
+                    className={`action-btn ghost ${report.status === "reading" ? "active" : ""}`}
+                    onClick={() => handleStatusChange(report, "reading")}
+                    disabled={updatingId === report.id}
+                  >
+                    ตรวจสอบอยู่
+                  </button>
+                  <button
+                    className={`action-btn success ${report.status === "resolved" ? "active" : ""}`}
+                    onClick={() => handleStatusChange(report, "resolved")}
+                    disabled={updatingId === report.id}
+                  >
+                    ปิดงาน
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
       )}
 
-      {/* Modal for detailed report view */}
-      {showDetailModal && selectedReport && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "rgba(0, 0, 0, 0.5)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: "white",
-            padding: "24px",
-            borderRadius: "8px",
-            maxWidth: "600px",
-            width: "90%",
-            maxHeight: "80vh",
-            overflowY: "auto",
-            position: "relative"
-          }}>
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "16px",
-              borderBottom: "1px solid #e2e8f0",
-              paddingBottom: "12px"
-            }}>
-              <h3 style={{
-                margin: 0,
-                color: "#1f2937",
-                fontSize: "1.2em",
-                fontWeight: "600"
-              }}>
-                รายละเอียดการแจ้งปัญหา
-              </h3>
-              <button
-                onClick={closeDetailModal}
-                style={{
-                  background: "none",
-                  border: "none",
-                  fontSize: "24px",
-                  cursor: "pointer",
-                  color: "#6b7280",
-                  padding: "4px"
-                }}
-              >
-                ✕
-              </button>
+      {activeReport && (
+        <div className="report-drawer" role="dialog">
+          <div className="drawer-header">
+            <div>
+              <p>รายละเอียดรายงาน</p>
+              <h3>{CATEGORY_META[activeReport.category]?.label || "ไม่ทราบ"}</h3>
             </div>
-            
-            <div style={{ lineHeight: "1.6" }}>
-              <div style={{ marginBottom: "16px" }}>
-                <strong>ชื่อผู้แจ้ง:</strong> {selectedReport.name}
+            <button className="icon-btn" onClick={() => setActiveReport(null)}>✕</button>
+          </div>
+          <div className="drawer-body">
+            <div className="drawer-section">
+              <span className="section-label">สถานะปัจจุบัน</span>
+              {renderStatusPill(activeReport.status)}
+            </div>
+            <div className="drawer-section">
+              <span className="section-label">รายละเอียด</span>
+              <p className="drawer-detail">{activeReport.detail}</p>
+            </div>
+            <div className="drawer-timeline">
+              <div>
+                <span>สร้างเมื่อ</span>
+                <strong>{formatDate(activeReport.createdAt)}</strong>
               </div>
-              <div style={{ marginBottom: "16px" }}>
-                <strong>เบอร์โทรศัพท์:</strong> {selectedReport.phone}
-              </div>
-              <div style={{ marginBottom: "16px" }}>
-                <strong>รายละเอียดปัญหา:</strong>
-                <div style={{
-                  marginTop: "8px",
-                  padding: "12px",
-                  backgroundColor: "#f9fafb",
-                  borderRadius: "6px",
-                  border: "1px solid #e5e7eb",
-                  whiteSpace: "pre-wrap"
-                }}>
-                  {selectedReport.detail}
-                </div>
-              </div>
-              <div style={{ marginBottom: "16px" }}>
-                <strong>สถานะ:</strong> {selectedReport.status}
-              </div>
-              <div style={{ marginBottom: "16px" }}>
-                <strong>วันที่แจ้ง:</strong> {selectedReport.date}
-              </div>
-              {selectedReport.image && (
-                <div style={{ marginBottom: "16px" }}>
-                  <strong>รูปภาพ:</strong>
-                  <div style={{ marginTop: "8px" }}>
-                    <img
-                      src={`http://localhost:5001/uploads/${selectedReport.image}`}
-                      alt="แนบรูปภาพ"
-                      style={{
-                        maxWidth: "100%",
-                        borderRadius: "8px",
-                        border: "1px solid #e5e7eb"
-                      }}
-                    />
-                  </div>
+              {activeReport.updatedAt && (
+                <div>
+                  <span>อัปเดตล่าสุด</span>
+                  <strong>{formatDate(activeReport.updatedAt)}</strong>
                 </div>
               )}
             </div>
-
-            <div style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: "8px",
-              marginTop: "20px",
-              paddingTop: "16px",
-              borderTop: "1px solid #e2e8f0"
-            }}>
-              <button
-                onClick={closeDetailModal}
-                style={{
-                  padding: "8px 16px",
-                  backgroundColor: "#6b7280",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontSize: "0.9em"
-                }}
-              >
-                ปิด
-              </button>
-            </div>
+          </div>
+          <div className="drawer-actions">
+            <button
+              className="ghost-btn"
+              onClick={() => handleStatusChange(activeReport, "reading")}
+              disabled={updatingId === activeReport.id}
+            >
+              ทำเครื่องหมายว่ากำลังตรวจสอบ
+            </button>
+            <button
+              className="primary-btn"
+              onClick={() => handleStatusChange(activeReport, "resolved")}
+              disabled={updatingId === activeReport.id}
+            >
+              ปิดงานนี้
+            </button>
           </div>
         </div>
       )}

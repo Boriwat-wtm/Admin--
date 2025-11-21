@@ -222,6 +222,27 @@ function ImageQueue() {
     }
   }
 
+  function renderGiftOrder(item) {
+    const gift = item.giftOrder || {};
+    return (
+      <div className="gift-order-card">
+        <div className="gift-order-header">
+          <div>
+            <span className="gift-table">โต๊ะ #{gift.tableNumber || "-"}</span>
+            <p className="gift-sender">จาก: {item.sender}</p>
+          </div>
+          <span className="gift-total">฿{item.price}</span>
+        </div>
+        <ul className="gift-items">
+          {(gift.items || []).map((giftItem) => (
+            <li key={`${item.id}-${giftItem.id}`}>{giftItem.name} x{giftItem.quantity}</li>
+          ))}
+        </ul>
+        {gift.note && <p className="gift-note">"{gift.note}"</p>}
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="queue-container">
@@ -275,7 +296,9 @@ function ImageQueue() {
                       <span className="sender">{image.sender}</span>
                     </div>
                     <div className="image-preview-container" style={{ position: "relative" }}>
-                      {image.filePath ? (
+                      {image.type === "gift" ? (
+                        renderGiftOrder(image)
+                      ) : image.filePath ? (
                         <>
                           <img
                             src={`http://localhost:5001${image.filePath}`}
@@ -368,7 +391,9 @@ function ImageQueue() {
             {currentPreview ? (
               <>
                 <div className="preview-image-container" style={{ position: "relative" }}>
-                  {currentPreview.filePath ? (
+                  {currentPreview.type === "gift" ? (
+                    renderGiftOrder(currentPreview)
+                  ) : currentPreview.filePath ? (
                     <img 
                       src={`http://localhost:5001${currentPreview.filePath}`} 
                       alt="Preview"

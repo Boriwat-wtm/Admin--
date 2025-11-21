@@ -2,9 +2,19 @@
   "systemOn": true,
   "enableImage": true,
   "enableText": true,
+  "enableGift": true,
+  "enableBirthday": true,
   "price": 100,
   "time": 10,
   "settings": [
+    {
+      "id": 1763545125193,
+      "mode": "birthday",
+      "date": "11/19/2025, 4:38:45 PM",
+      "duration": "1 นาที 0 วินาที",
+      "time": 60,
+      "price": 0
+    },
     {
       "id": 1757893886826,
       "mode": "text",

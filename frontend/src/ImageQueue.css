@@ -1,3 +1,49 @@
+
+.gift-order-card {
+  background: rgba(15, 23, 42, 0.8);
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: #e2e8f0;
+}
+
+.gift-order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.gift-table {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.gift-sender {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  color: #cbd5f5;
+}
+
+.gift-total {
+  font-weight: 700;
+  color: #34d399;
+}
+
+.gift-items {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gift-note {
+  margin: 0;
+  font-style: italic;
+  color: #fcd34d;
+}
 /* Rcra\Downloads\CMS\Admin\frontend\src\ImageQueue.css */
 .queue-container {
   min-height: 100vh;

@@ -13,12 +13,14 @@ app.use(express.json());
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: "*" }
-});w
+});
 
 let config = {
   systemOn: true,
   enableImage: true,
   enableText: true,
+  enableGift: true,
+  enableBirthday: true,
   price: 100,
   time: 10,
   settings: [] // เก็บแพ็คเกจ
@@ -37,6 +39,12 @@ if (fs.existsSync(settingsPath)) {
 // REST API (optional สำหรับ fallback)
 app.get("/api/status", (req, res) => res.json(config));
 
+// API สำหรับดึง settings history
+app.get("/api/check-history", (req, res) => {
+  console.log("[Realtime] Returning settings history:", config.settings);
+  res.json(config.settings || []);
+});
+
 // WebSocket
 io.on("connection", (socket) => {
   // ส่งสถานะล่าสุดให้ client ที่เพิ่งเชื่อมต่อ
@@ -49,7 +57,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("getConfig", () => {
-    socket.emit("configUpdate", config);
+    socket.emit("status", config);
   });
 
   socket.on("adminUpdateConfig", (newConfig) => {

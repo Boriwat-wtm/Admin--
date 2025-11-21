@@ -19,6 +19,59 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
+// ----- Ranking Storage -----
+const rankingsPath = path.join(__dirname, "rankings.json");
+let rankings = [];
+
+if (fs.existsSync(rankingsPath)) {
+  try {
+    const loaded = JSON.parse(fs.readFileSync(rankingsPath, "utf8"));
+    if (Array.isArray(loaded)) {
+      rankings = loaded;
+    }
+  } catch (error) {
+    console.warn("Failed to parse rankings.json, starting fresh", error);
+  }
+} else {
+  fs.writeFileSync(rankingsPath, JSON.stringify([], null, 2));
+}
+
+function saveRankings() {
+  fs.writeFileSync(rankingsPath, JSON.stringify(rankings, null, 2));
+}
+
+function addRankingPoint(sender, amount) {
+  const points = Number(amount);
+  if (isNaN(points) || points <= 0) {
+    return;
+  }
+  const name = (sender || "Guest").trim() || "Guest";
+  const normalized = name.toLowerCase();
+  const existing = rankings.find((entry) => (entry.name || "").toLowerCase() === normalized);
+  if (existing) {
+    existing.points = Number(existing.points || 0) + points;
+    existing.updatedAt = new Date().toISOString();
+  try {
+    if (fs.existsSync(rankingsPath)) {
+      const latest = JSON.parse(fs.readFileSync(rankingsPath, "utf8"));
+      if (Array.isArray(latest)) {
+        rankings = latest;
+      }
+    }
+  } catch (error) {
+    console.warn("อ่าน rankings.json ไม่สำเร็จ", error);
+  }
+  } else {
+    rankings.push({
+      name,
+      points,
+      updatedAt: new Date().toISOString()
+    });
+  }
+  rankings.sort((a, b) => Number(b.points || 0) - Number(a.points || 0));
+  saveRankings();
+}
+
 // ตั้งค่าการเก็บไฟล์
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -35,6 +88,28 @@ app.use('/uploads', express.static(uploadsDir));
 
 // เก็บข้อมูลรูปภาพ (ในการใช้งานจริงควรใช้ฐานข้อมูล)
 let imageQueue = [];
+
+// ----- Gift Settings -----
+const giftSettingsPath = path.join(__dirname, "gift-settings.json");
+let giftSettings = {
+  tableCount: 10,
+  items: []
+};
+
+if (fs.existsSync(giftSettingsPath)) {
+  try {
+    const loaded = JSON.parse(fs.readFileSync(giftSettingsPath, "utf8"));
+    giftSettings = { ...giftSettings, ...loaded };
+  } catch (error) {
+    console.warn("Failed to read gift-settings.json, using defaults", error);
+  }
+} else {
+  fs.writeFileSync(giftSettingsPath, JSON.stringify(giftSettings, null, 2));
+}
+
+function saveGiftSettings() {
+  fs.writeFileSync(giftSettingsPath, JSON.stringify(giftSettings, null, 2));
+}
 
 // เก็บประวัติการตรวจสอบ
 let checkHistory = [];
@@ -130,9 +205,158 @@ app.post("/login", async (req, res) => {
   }
 });
 
+// ----- Gift Settings APIs -----
+app.get("/api/gifts/settings", (req, res) => {
+  res.json(giftSettings);
+});
+
+app.post("/api/gifts/items", (req, res) => {
+  const { name, price, description, imageUrl } = req.body;
+  if (!name || !price) {
+    return res.status(400).json({ success: false, message: "กรุณาระบุชื่อสินค้าและราคา" });
+  }
+
+  const item = {
+    id: Date.now().toString(),
+    name: name.trim(),
+    price: Number(price) || 0,
+    description: description ? description.trim() : "",
+    imageUrl: imageUrl || ""
+  };
+  giftSettings.items.unshift(item);
+  saveGiftSettings();
+  res.json({ success: true, item, settings: giftSettings });
+});
+
+app.get("/api/rankings/top", (req, res) => {
+  const top = rankings
+    .slice()
+    .sort((a, b) => Number(b.points || 0) - Number(a.points || 0))
+    .slice(0, 3);
+  res.json({ success: true, ranks: top, totalUsers: rankings.length });
+});
+
+app.post("/api/gifts/upload", upload.single("image"), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "ไม่พบไฟล์รูปภาพ" });
+    }
+    const relativePath = `/uploads/${req.file.filename}`;
+    res.json({ success: true, url: relativePath });
+  } catch (error) {
+    console.error("Gift image upload failed", error);
+    res.status(500).json({ success: false, message: "อัปโหลดรูปภาพไม่สำเร็จ" });
+  }
+});
+
+app.put("/api/gifts/items/:id", (req, res) => {
+  const { id } = req.params;
+  const target = giftSettings.items.find((item) => item.id === id);
+  if (!target) {
+    return res.status(404).json({ success: false, message: "ไม่พบรายการ" });
+  }
+
+  const { name, price, description, imageUrl } = req.body;
+  if (name) target.name = name.trim();
+  if (price !== undefined) target.price = Number(price) || 0;
+  if (description !== undefined) target.description = description.trim();
+  if (imageUrl !== undefined) target.imageUrl = imageUrl;
+
+  saveGiftSettings();
+  res.json({ success: true, item: target, settings: giftSettings });
+});
+
+app.delete("/api/gifts/items/:id", (req, res) => {
+  const { id } = req.params;
+  const target = giftSettings.items.find((item) => item.id === id);
+  if (!target) {
+    return res.status(404).json({ success: false, message: "ไม่พบรายการ" });
+  }
+
+  if (target.imageUrl) {
+    let relativePath = target.imageUrl;
+    if (relativePath.startsWith("http")) {
+      const uploadsIndex = relativePath.indexOf("/uploads/");
+      if (uploadsIndex !== -1) {
+        relativePath = relativePath.substring(uploadsIndex);
+      }
+    }
+    if (relativePath.startsWith("/uploads/")) {
+      const normalizedPath = relativePath.replace(/^\/+/, "");
+      const absolutePath = path.join(__dirname, normalizedPath);
+      if (fs.existsSync(absolutePath)) {
+        try {
+          fs.unlinkSync(absolutePath);
+        } catch (err) {
+          console.warn("Failed to remove gift image", err);
+        }
+      }
+    }
+  }
+
+  giftSettings.items = giftSettings.items.filter((item) => item.id !== id);
+
+  saveGiftSettings();
+  res.json({ success: true, settings: giftSettings });
+});
+
+app.patch("/api/gifts/table-count", (req, res) => {
+  const { tableCount } = req.body;
+  const parsed = Number(tableCount);
+  if (!parsed || parsed < 1) {
+    return res.status(400).json({ success: false, message: "จำนวนโต๊ะไม่ถูกต้อง" });
+  }
+  giftSettings.tableCount = parsed;
+  saveGiftSettings();
+  res.json({ success: true, settings: giftSettings });
+});
+
+// รับคำสั่งซื้อของขวัญจากฝั่ง User เพื่อเข้าคิวอนุมัติ
+app.post("/api/gifts/order", (req, res) => {
+  try {
+    const { orderId, sender, tableNumber, note, items, totalPrice } = req.body;
+    if (!orderId || !tableNumber || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, message: "ข้อมูลคำสั่งซื้อไม่ครบ" });
+    }
+
+    const queueItem = {
+      id: orderId,
+      type: "gift",
+      text: `ส่งของขวัญไปยังโต๊ะ ${tableNumber}`,
+      time: 1,
+      price: Number(totalPrice) || 0,
+      sender: sender || "Guest",
+      textColor: "#fff",
+      socialType: null,
+      socialName: null,
+      filePath: null,
+      composed: true,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+      receivedAt: new Date().toISOString(),
+      giftOrder: {
+        tableNumber,
+        items,
+        note: note || ""
+      }
+    };
+
+    imageQueue.push(queueItem);
+    addRankingPoint(sender, Number(totalPrice) || 0);
+    res.json({ success: true, queueItem });
+  } catch (error) {
+    console.error("Gift order push failed", error);
+    res.status(500).json({ success: false, message: "บันทึกคำสั่งซื้อไม่สำเร็จ" });
+  }
+});
+
 // API สำหรับรับข้อมูลจาก User backend
 app.post("/api/upload", upload.single("file"), (req, res) => {
   try {
+    console.log("[Admin] Upload request received");
+    console.log("[Admin] req.body:", req.body);
+    console.log("[Admin] req.file:", req.file);
+    
     const {
       type,
       text,
@@ -145,9 +369,16 @@ app.post("/api/upload", upload.single("file"), (req, res) => {
       composed
     } = req.body;
 
+    if (!req.file) {
+      console.error("[Admin] No file received in upload");
+      return res.status(400).json({ success: false, error: "No file received" });
+    }
+
+    console.log("[Admin] Creating upload item with type:", type);
+
     const item = {
       id: Date.now().toString(),
-      type,
+      type: type || "image",
       text: text || "",
       time: Number(time) || 0,
       price: Number(price) || 0,
@@ -163,10 +394,12 @@ app.post("/api/upload", upload.single("file"), (req, res) => {
     };
 
     imageQueue.push(item);
+    addRankingPoint(sender, Number(price) || 0);
+    console.log("[Admin] Upload item created and queued:", item.id, "type:", item.type);
     res.json({ success: true, uploadId: item.id });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ success: false });
+    console.error("[Admin] Error in upload:", e);
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 
@@ -320,7 +553,6 @@ app.get("/api/admin/report", async (req, res) => {
   try {
     console.log("=== Admin report request received");
     
-    // อ่านไฟล์ report.json
     const reportPath = path.join(__dirname, 'report.json');
     
     if (!fs.existsSync(reportPath)) {
@@ -329,50 +561,12 @@ app.get("/api/admin/report", async (req, res) => {
     }
     
     const data = await fs.promises.readFile(reportPath, 'utf8');
-    const reports = JSON.parse(data);
+    const reportsFromFile = JSON.parse(data);
     
-    console.log("Returning reports:", reports.length);
-    res.json(reports);
+    console.log("Returning reports:", reportsFromFile.length);
+    res.json(reportsFromFile);
   } catch (error) {
     console.error('Error fetching reports:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error' 
-    });
-  }
-});
-
-// API สำหรับรับรายงานจาก User backend
-app.post("/api/report", (req, res) => {
-  try {
-    console.log('=== Received report from User backend:', req.body);
-    
-    // บันทึกข้อมูลลงไฟล์ report.json
-    const reportPath = path.join(__dirname, 'report.json');
-    let reports = [];
-    
-    // อ่านข้อมูลเดิม (ถ้ามี)
-    if (fs.existsSync(reportPath)) {
-      const data = fs.readFileSync(reportPath, 'utf8');
-      reports = JSON.parse(data);
-    }
-    
-    // เพิ่มรายงานใหม่
-    const newReport = {
-      ...req.body,
-      id: Date.now().toString(),
-      receivedAt: new Date().toISOString()
-    };
-    
-    reports.push(newReport);
-    
-    // บันทึกลงไฟล์
-    fs.writeFileSync(reportPath, JSON.stringify(reports, null, 2));
-    
-    console.log('Report saved successfully');
-    res.json({ success: true, message: 'Report received successfully' });
-  } catch (error) {
-    console.error('Error saving report:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Server error' 
@@ -423,26 +617,55 @@ function saveReports() {
   fs.writeFileSync(reportsPath, JSON.stringify(reports, null, 2));
 }
 
-// POST: user ส่งรีพอร์ต
+// POST: user ส่งรีพอร์ต (รวม 2 แบบ: category-based และ report.json)
 app.post("/api/report", (req, res) => {
-  const { category, detail } = req.body;
-  if (!category || !detail || !detail.trim()) {
-    return res.status(400).json({ success: false, message: "INVALID_DATA" });
+  try {
+    console.log('=== Received report:', req.body);
+    
+    const { category, detail } = req.body;
+    
+    // ตรวจสอบข้อมูล
+    if (!category || !detail || !detail.trim()) {
+      return res.status(400).json({ success: false, message: "INVALID_DATA" });
+    }
+    
+    // สร้าง report object
+    const report = {
+      id: Date.now().toString(),
+      category,
+      detail: detail.trim(),
+      status: "new",
+      createdAt: new Date().toISOString(),
+      receivedAt: new Date().toISOString()
+    };
+    
+    // บันทึกลง reports array (reports.json)
+    reports.push(report);
+    saveReports();
+    
+    // บันทึกลง report.json (สำหรับ backward compatibility)
+    const reportPath = path.join(__dirname, 'report.json');
+    let reportFileData = [];
+    if (fs.existsSync(reportPath)) {
+      try {
+        const data = fs.readFileSync(reportPath, 'utf8');
+        reportFileData = JSON.parse(data);
+      } catch (e) {
+        reportFileData = [];
+      }
+    }
+    reportFileData.push(report);
+    fs.writeFileSync(reportPath, JSON.stringify(reportFileData, null, 2));
+    
+    console.log('Report saved successfully to both files');
+    return res.json({ success: true, report });
+  } catch (error) {
+    console.error('Error saving report:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Server error' 
+    });
   }
-  const report = {
-    id: Date.now().toString(),
-    category,
-    detail: detail.trim(),
-    status: "new",            // new | reading | resolved
-    createdAt: new Date().toISOString()
-  };
-  reports.push(report);
-  saveReports();
-
-  // ถ้ามี io/socket อยู่ในไฟล์นี้สามารถ emit ได้ เช่น:
-  // io.emit("newReport", report);
-
-  return res.json({ success: true, report });
 });
 
 // GET: admin ดูรายการ

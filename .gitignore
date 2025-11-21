@@ -1,0 +1,16 @@
+# Dependencies
+/node_modules
+
+# Build outputs
+/backend/uploads/
+/frontend/build
+
+# Caches
+*.log
+.eslintcache
+.DS_Store
+
+# Node/npm files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
