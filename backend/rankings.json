@@ -1,6 +1,27 @@
 [
-	{ "name": "Aom", "points": 2750, "updatedAt": "2025-11-14T10:00:00.000Z" },
-	{ "name": "UP Digital Club", "points": 1890, "updatedAt": "2025-11-14T10:05:00.000Z" },
-	{ "name": "Guest", "points": 950, "updatedAt": "2025-11-14T10:10:00.000Z" },
-	{ "name": "Nimman", "points": 720, "updatedAt": "2025-11-14T10:12:00.000Z" }
+  {
+    "name": "Aom",
+    "points": 2750,
+    "updatedAt": "2025-11-14T10:00:00.000Z"
+  },
+  {
+    "name": "UP Digital Club",
+    "points": 1890,
+    "updatedAt": "2025-11-14T10:05:00.000Z"
+  },
+  {
+    "name": "Guest",
+    "points": 950,
+    "updatedAt": "2025-11-14T10:10:00.000Z"
+  },
+  {
+    "name": "Nimman",
+    "points": 720,
+    "updatedAt": "2025-11-14T10:12:00.000Z"
+  },
+  {
+    "name": "kuy",
+    "points": 2,
+    "updatedAt": "2025-11-21T11:09:55.232Z"
+  }
 ]

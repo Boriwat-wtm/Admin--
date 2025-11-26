@@ -68,5 +68,34 @@
     "createdAt": "2025-09-14T22:19:30.550Z",
     "receivedAt": "2025-09-14T22:19:30.550Z",
     "checkedAt": "2025-09-14T23:02:01.772Z"
+  },
+  {
+    "id": "gift-1763723350223",
+    "type": "gift",
+    "text": "ส่งของขวัญไปยังโต๊ะ 2",
+    "time": 1,
+    "price": 2,
+    "sender": "kuy",
+    "textColor": "#fff",
+    "socialType": null,
+    "socialName": null,
+    "filePath": null,
+    "composed": true,
+    "status": "rejected",
+    "createdAt": "2025-11-21T11:09:55.231Z",
+    "receivedAt": "2025-11-21T11:09:55.231Z",
+    "giftOrder": {
+      "tableNumber": 2,
+      "items": [
+        {
+          "id": "1763723320633",
+          "name": "กกก",
+          "price": 1,
+          "quantity": 2
+        }
+      ],
+      "note": "เบิพ"
+    },
+    "checkedAt": "2025-11-21T11:10:29.800Z"
   }
 ]
